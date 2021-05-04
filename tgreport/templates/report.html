@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Reporting: terragrunt plan-all at {{ reporttime }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.json-viewer@1.4.0/json-viewer/jquery.json-viewer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@5.0.0/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/c3@0.7.20/c3.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/c3@0.7.20/c3.min.css" type="text/css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/jquery.json-viewer@1.4.0/json-viewer/jquery.json-viewer.css" type="text/css" rel="stylesheet">
+<style>
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    text-rendering: optimizeLegibility;
+    color: #000000c0;
+    font-size: 15px;
+    margin: 0;
+}
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.stripe {
+    width: 100%;
+    height: 5px;
+    background: #000000;
+    animation-name: wipe-in;
+    animation-duration: 1s;
+}
+
+@keyframes wipe-in {
+    0% {
+        width: 0%;
+    }
+
+    100% {
+        width: 100%;
+    }
+}
+
+.description {
+    padding-bottom: 4px;
+    padding-right: 10px;
+    font-size: 14px;
+    color: #000000;
+}
+
+.description a:hover {
+  color: #1f77b4;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.container {
+    animation-name: fade-in;
+    animation-duration: 1s;
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+h1, h2 {
+    text-align: left;
+    color: #000000;
+}
+
+button {
+    font-size: 18px;
+    background: #1f77b4;
+    color: #fff;
+x-shadow: 0 2px 6px 0 hsla(0, 0%, 0%, 0.2);
+    box-shadow: 0 2px 6px 0 hsla(0, 0%, 0%, 0.2);
+    border: none;
+    border-radius: 2px;
+    width: 170px;
+    height: 40px;
+}
+
+button:hover {
+    background: #1f92b4;
+    cursor: pointer;
+}
+
+button:active {
+    background: #1f77b4;
+}
+
+button.text-button {
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+    width: auto;
+    height: auto;
+    text-decoration: underline;
+    font-size: inherit;
+    font-weight: inherit;
+    font-family: Arial, Helvetica, sans-serif;
+    color: inherit;
+    text-align: inherit;
+    padding: 0;
+}
+button.text-button.major {
+    width: 100%;
+    text-align: center;
+    padding: 5px;
+    border-radius: 2px;
+}
+button.text-button.major:hover {
+    background-color:  rgba(0, 0, 0, 0.05);
+}
+
+.prettyplan ul {
+    padding-left: 0;
+    font-size: 13px;
+}
+
+.prettyplan ul li {
+    list-style: none;
+    background: #ffffffe6;
+    padding: 10px;
+    color: #000000c0;
+    margin: 4px;
+    box-shadow: 0 2px 6px 0 hsla(0, 0%, 0%, 0.2);
+}
+
+.prettyplan ul.warnings li {
+    border-left: 3px solid #757575;
+}
+
+.prettyplan ul.actions li.update {
+    border-left: 3px solid #4c9fff;
+}
+
+.prettyplan ul.actions li.create {
+    border-left: 3px solid #85e2ff;
+}
+
+.prettyplan ul.actions li.delete {
+    border-left: 3px solid #0079af;
+}
+
+.prettyplan ul.actions li.recreate {
+    border-left: 3px solid #0037c9;
+}
+
+.prettyplan ul.actions li.read {
+    border-left: 3px solid #ffffff;
+}
+
+.badge {
+    display: inline-block;
+    text-transform: uppercase;
+    margin-right: 10px;
+    padding: 3px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.warnings .badge {
+    color: #757575;
+}
+
+li.update .badge {
+    color: #4c9fff;
+}
+
+li.create .badge {
+    color: #85e2ff;
+}
+
+li.delete .badge {
+    color: #0079af;
+}
+
+li.recreate .badge {
+    color: #0037c9;
+}
+
+li.read .badge {
+    color: #000000;
+}
+
+.id-segment:not(:last-child)::after {
+    content: " > ";
+}
+
+.id-segment.name,
+.id-segment.type {
+    font-weight: bold;
+}
+
+.change-count {
+    float: right;
+}
+
+.summary {
+    cursor: pointer;
+}
+
+.changes {
+    margin: 5px auto 0 auto;
+    padding: 5px;
+}
+
+.changes table {
+    width: 100%;
+    word-break: break-all;
+    font-size: 13px;
+}
+
+.changes table td {
+    width: 40%;
+}
+
+pre {
+    white-space: pre-wrap;
+}
+
+ol.json-array li {
+    padding: 0px;
+    box-shadow: none;
+    background: none;
+}
+
+ul.json-dict li {
+    padding: 0px;
+    box-shadow: none;
+    background: none;
+}
+
+pre#raw-output {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 8px;
+    margin: 0;
+}
+
+.changes table td.property {
+    width: 20%;
+    text-align: right;
+    font-weight: bold;
+}
+
+.changes table tr:nth-child(even) {
+    background-color: #f5f5f5;
+}
+
+.forces-new-resource {
+    color: #b71c1c;
+}
+
+.collapsed, .hidden {
+    display: none;
+}
+
+#chartplan1 {
+    width: 320px;
+    margin-bottom: 50px;
+    margin-top: 50px;
+}
+
+#chartplan2 {
+    float:right;
+    margin-bottom: 50px;
+    margin-top: 50px;
+    margin-left: 50px;
+}
+
+.alert {
+  padding: 20px;
+  background-color: #f44336;
+  color: white;
+  opacity: 1;
+  transition: opacity 0.6s;
+  margin-bottom: 15px;
+}
+
+.alert.warning {background-color: #ff9800;}
+.alert.info {background-color: #2196F3;}
+
+.closebtn {
+  margin-left: 15px;
+  color: white;
+  font-weight: bold;
+  float: right;
+  font-size: 22px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.closebtn:hover {
+  color: black;
+}
+
+</style>
+<script>
+
+	function accordion(element) {
+	    const changes = element.parentElement.getElementsByClassName('changes');
+	    for (var i = 0; i < changes.length; i++) {
+	        changes[i].classList.toggle('collapsed');
+	    }
+	}
+	
+	function expandAll() {
+	    const sections = document.querySelectorAll('.changes.collapsed');
+	
+	    for (var i = 0; i < sections.length; i++) {
+	        sections[i].classList.toggle('collapsed');
+	    }
+	
+	    document.querySelector('.expand-all').classList.toggle('hidden');
+	    document.querySelector('.collapse-all').classList.toggle('hidden');
+	}
+	
+	function collapseAll() {
+	    const sections = document.querySelectorAll('.changes:not(.collapsed)');
+	
+	    for (var i = 0; i < sections.length; i++) {
+	        sections[i].classList.toggle('collapsed');
+	    }
+	
+	    document.querySelector('.expand-all').classList.toggle('hidden');
+	    document.querySelector('.collapse-all').classList.toggle('hidden');
+	}
+	
+	function toggleRawPlan() {
+	    document.getElementById('raw-output').classList.toggle('collapsed');
+	}
+	
+	$(function() {
+	
+		var options = {
+		  collapsed: $('#collapsed').is(':checked'),
+		  rootCollapsable: $('#root-collapsable').is(':checked'),
+		  withQuotes: $('#with-quotes').is(':checked'),
+		  withLinks: $('#with-links').is(':checked')
+		};
+	
+		function renderJson() {
+	
+			$('.json-input').each(function( index ) {
+				var input = eval('(' + $(this).attr('data') + ')');
+				$(this).append('<pre class="json-renderer"></pre>');
+				$(this).find('pre').jsonViewer(input, options);
+			});
+		}
+	
+		// Display JSON sample on page load
+		renderJson();
+	});
+
+</script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Report infrastructure changes as code with Terragrunt</h1>
+        <div class="description">
+          It's result of the generation of execution plan job <a href="{{ project_url }}/-/pipelines/{{ pipeline_id }}">#{{ pipeline_id }}</a> in our integration test (.gitlab-ci.yml).  
+        </div>
+        <div class="description">
+            <b>Generated at {{ date.strftime('%a, %d %b %Y %H:%M:%S %Z %z') }}</b>
+        </div>
+        <div style="display: inline-flex;"><div id="chartplan1"></div><div id="chartplan2"></div></div>
+        <div id="prettyplan" class="prettyplan">
+            {% if data['delete']['count'] > 0 %}
+                <div class="alert warning">
+                  <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
+                  <strong>Warning!</strong> Indicates a potentially negative action: Resources Delete({{data['delete']['count']}}).
+                </div>
+            {% endif %}
+            {% if data['recreate']['count'] > 0 %}
+                <div class="alert">
+                  <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
+                  <strong>Danger!</strong> Indicates a dangerous or potentially negative action: Recreate({{data['recreate']['count']}}).
+                </div>
+            {% endif %}
+            {% if data['create']['count'] == 0 and data['update']['count'] == 0 and data['delete']['count'] == 0 and data['recreate']['count'] == 0 %}
+                <div class="alert info">
+                  <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span> 
+                  <strong>Info!</strong> No changes. Infrastructure is up-to-date.
+                </div>
+            {% else %}
+                <button class="expand-all" onclick="expandAll()">Expand all</button>
+                <button class="collapse-all hidden" onclick="collapseAll()">Collapse all</button>
+            {% endif %}
+            <ul id="actions" class="actions">
+            {% for a, v in data.items() %}
+               {% for d in v['resources'] %}
+                <li class="{{ a }}">
+                    <div class="summary" onclick="accordion(this)">
+                        <span class="badge">{{ a }}</span>
+                        <span class="id">
+                            <span class="id-segment type">{{ d['type'] }}</span>
+                            <span class="id-segment mode">{{ d['path'] }}</span>
+                        </span>
+                        <span class="change-count">{{ d['changes'] }} changes</span>
+                    </div>
+                    <div class="changes collapsed">
+                        <table>
+                        {% set nb = [(d['after']|length), (d['before']|length)]|max -%}
+                        {% if ((d['after']|length) - (d['before']|length)) <= 0 -%}
+                        {% set keys = d['before'].keys()|list -%}
+                        {% else -%}
+                        {% set keys = d['after'].keys()|list -%}
+                        {% endif -%}
+                            <thead>
+                                <tr>
+                                    <th>properties</th>
+                                    <th>value before</th>
+                                    <th>value after</th>
+                                </tr>
+                            </thead>
+                        {% for i in range(nb) %}
+                            <tr>
+                                <td class="property">
+                                    {{ keys[i] }}
+                                </td>
+                                <td class="old-value json-input" data='{{ (d['before'][keys[i]] |default(None)) |tojson }}'></td>
+                                <td class="new-value json-input" data='{{ (d['after'][keys[i]] |default(None)) |tojson }}'></td>
+                            </tr>
+                        {% endfor %}
+                        </table>
+                    </div>
+                </li>
+                {% endfor %}
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+<script>
+var chart1 = c3.generate({
+    bindto: '#chartplan1',
+    data: {
+        columns: [
+            ["create", {{ data['create']['count'] |default(0) }}],
+            ["update", {{ data['update']['count'] |default(0) }}],
+            ["delete", {{ data['delete']['count'] |default(0) }}],
+            ["recreate", {{ data['recreate']['count'] |default(0) }}]
+        ],
+        type : 'donut',
+        onclick: function (d, i) { console.log("onclick", d, i); },
+        onmouseover: function (d, i) { console.log("onmouseover", d, i); },
+        onmouseout: function (d, i) { console.log("onmouseout", d, i); }
+    },
+    color: {
+        pattern: ['#85e2ff', '#4c9fff', '#0079af', '#0037c9']
+    },
+    donut: {
+        title: "Distribution of actions"
+    }
+});
+var chart2 = c3.generate({
+    bindto: '#chartplan2',
+    data: {
+        x: 'x',
+        columns: [
+            ['x', '{{ date.strftime('%Y-%m-%d') }}'],
+            ["create", {{ data['create']['count'] |default(0) }}],
+            ["update", {{ data['update']['count'] |default(0) }}],
+            ["delete", {{ data['delete']['count'] |default(0) }}],
+            ["recreate", {{ data['recreate']['count'] |default(0) }}]
+        ],
+        type: 'bar',
+    },
+    color: {
+        pattern: ['#85e2ff', '#4c9fff', '#0079af', '#0037c9']
+    },
+    size: {
+      width: 600
+    },
+    axis : {
+        x : {
+            type : 'timeseries',
+            tick: {
+                fit: true,
+                format: "%e %b %y"
+            }
+        }
+    }
+});
+</script>
+</body>
+
+</html>
