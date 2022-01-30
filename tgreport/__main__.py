@@ -81,7 +81,6 @@ def OfuscatePlanResources(plan, regex, pattern="[MASKED]"):
     for k, v in enumerate(plan["resource_changes"]):
         for i in list(findkeys):
             plan["resource_changes"][k] = _nestedDictUpdateByKey(v, i, pattern)
-
     return plan
 
 def remerge(*containers, source_map: list = None):
@@ -130,10 +129,7 @@ def remerge(*containers, source_map: list = None):
 
     return ret
 
-def getAndMergePlanJson(pattern):
-
-    # Set regex for detect variables sensibles
-    regex = ["*pass*", "*secret*", "*token*", "*access*", "*result*", "*certs*", "*certificate*", "*rsa*", "*dsa*", "*private*", "*salt*", "*hash*"]
+def getAndMergePlanJson(regex, pattern):
 
     try:
        # Get all files with pattern defined
@@ -174,9 +170,14 @@ def createReport(args):
     warning = False
 
     # Get terragrunt plan merged
-    data = getAndMergePlanJson(args.jsonplan)
+    data = getAndMergePlanJson(args.regex, args.jsonplan)
     log.debug(data)
 
+    # Write file plan.out.json
+    f = open("plan.out.json", "w")
+    f.write(json.dumps(data))
+    f.close()
+    
     log.debug('plan.out.json generated to ' + str(now))
 
     try:
@@ -248,10 +249,12 @@ def main():
     with app.app_context():
 
        parser = argparse.ArgumentParser()
+       parser.add_argument("-m", "--mask", type=lambda s: [str(item) for item in s.split(',')], dest='regex', default=["*pass*", "*secret*", "*token*", "*access*", "*result*", "*certs*", "*certificate*", "*rsa*", "*dsa*", "*private*", "*salt*", "*hash*", "*vars*", "*triggers*"],
+                           help="comma delimited regex list to mask secrets")
        parser.add_argument("-u", "--url", type=str, dest='project_url', required=True,
-                           help="url project gitlab (ex: https://example.com/gitlab-org/gitlab-foss)")
-       parser.add_argument("-i", "--id", type=int, dest='pipeline_id', required=True,
-                           help="pipeline id gitlab (ex: 1355)")
+                           help="pipeline url")
+       parser.add_argument("-i", "--id", type=str, dest='pipeline_id', required=True,
+                           help="pipeline id")
        parser.add_argument("jsonplan", type=str, nargs='?', const=1, default='plan.out.json',
                            help="terraform plan to json format (default: plan.out.json)")
        parser.add_argument("-v", "--verbose", action="store_true",

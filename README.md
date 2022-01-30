@@ -17,31 +17,17 @@ $ python setup.py install
 
 ## Usage
 
-### Override terragrunt.hcl parameters ###
+### Create a plan with terragrunt
 ```
-terraform {
-  extra_arguments "custom_arguments" {
-    commands  = ["plan"]
-    arguments = ["-out=plan.out"]
-  }
-  after_hook "after_hook_plan_to_json" {
-    commands = ["plan"]
-    execute  = ["sh", "-c", "terraform show -json plan.out > plan.out.json"]
-  }
-}
-```
-
-### Create all plan with terragrunt
-```
-$ terragrunt plan-all
+$ cd project/main
+$ terragrunt plan-all -out=plan.out
 ```
 
 ### Create report.html
 ```
-$ tgreport -i <PIPELINE_GILAB_ID> -u <PROJECT_GITLAB_URL>
+$ tgreport -i <ID> -u <URL>
+
+or
+
+$ tgreport -i <ID> -u <URL> -m "*pass*,*secret*,*token*,*access*,*result*,*certs*,*certificate*,*rsa*,*dsa*,*private*,*salt*,*hash*,*vars*,*triggers*"
 ```
-
-## License
-
-The source code for the site is licensed under the MIT license, which you can find in
-the [LICENSE](https://github.com/sbeyn/terragrunt-report/blob/main/LICENSE) file.
